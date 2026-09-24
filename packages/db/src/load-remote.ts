@@ -54,7 +54,7 @@ async function fetchSidecarPair(
 export async function loadCatalogueFromUrl(
   base: string,
   /** Skip the two embedding sidecars. They are 11.6MB of the 14MB a
-   *  cold start pulls, and only find_similar / recommend read them -
+   *  cold start pulls, and only the vector tools read them -
    *  so a caller that can await them later should not pay for them
    *  before it can answer its first search. `ensureSidecarFromUrl`
    *  loads them separately. */
@@ -98,33 +98,82 @@ export function ensureCatalogue(
   return _loaded;
 }
 
-/* ─── sidecar-only loader ───
+/* ─── sidecar-only loaders ───
  * For runtimes that bundle the seed (so the catalogue is already in
  * memory via `bundledScreens`) but can't readFileSync `embeddings.bin`
  * — e.g. a Vercel serverless function, where the .bin isn't traced into
  * the lambda. Fetches just the idx + bin from the CDN and injects them
- * so vector tools (find_similar / recommend) work. Best-effort: returns
- * false on any failure and callers degrade to lexical search. */
-let _sidecarLoaded: Promise<boolean> | null = null;
+ * so the vector tools (search_screens / find_similar / recommend) work.
+ * Best-effort: returns
+ * false on any failure and callers degrade to lexical search.
+ *
+ * The two sidecars load SEPARATELY. The per-site one (embeddings.*,
+ * 3.3MB) powers search_screens' vector blend, so hosted routes await it
+ * before serving. The per-row one (embeddings-rows.*, 9.1MB) is read
+ * only by find_similar — loading it eagerly cost every
+ * lambda +9.1MB and blocked even initialize/tools-list on the bigger
+ * fetch, so those two tools pull it lazily via their `awaitVectors`
+ * hook instead. A lambda that never serves a vector tool never pays
+ * for it. */
+let _siteSidecarLoaded: Promise<boolean> | null = null;
+let _rowSidecarLoaded: Promise<boolean> | null = null;
 
-async function loadSidecarFromUrl(base: string): Promise<boolean> {
-  const b = base.replace(/\/+$/, "");
-  const [vectors, rowVectors] = await Promise.all([
-    fetchSidecarPair(b, "embeddings", setSidecar),
-    fetchSidecarPair(b, "embeddings-rows", setRowSidecar),
-  ]);
-  return vectors > 0 || rowVectors > 0;
+/* fetchSidecarPair swallows every failure (network, non-200, malformed)
+ * to 0, so an empty result is the ONLY failure signal these loaders
+ * get - and it must not stick: a transient CDN blip memoized as `false`
+ * would brick vector search for the isolate's whole lifetime. Both
+ * loaders therefore reset their memo on an empty result so the next
+ * call retries. (While a sidecar is genuinely absent - a publish race
+ * - this re-fetches per call: two quick 404s, the right side of the
+ * trade-off. The defensive .catch keeps a thrown rejection from
+ * sticking if fetchSidecarPair's internals ever change.) */
+
+/** Per-site sidecar (embeddings.*) — the one search_screens reads. */
+export function ensureSiteSidecarFromUrl(base: string): Promise<boolean> {
+  if (!_siteSidecarLoaded) {
+    const b = base.replace(/\/+$/, "");
+    _siteSidecarLoaded = fetchSidecarPair(b, "embeddings", setSidecar)
+      .then((n) => {
+        if (n === 0) {
+          _siteSidecarLoaded = null;
+          return false;
+        }
+        return true;
+      })
+      .catch((e) => {
+        _siteSidecarLoaded = null;
+        throw e;
+      });
+  }
+  return _siteSidecarLoaded;
 }
 
-export function ensureSidecarFromUrl(base: string): Promise<boolean> {
-  // Same retry-on-failure guard as ensureCatalogue. loadSidecarFromUrl
-  // already swallows to `false`, but this keeps a thrown rejection from
-  // sticking if its internals ever change.
-  if (!_sidecarLoaded) {
-    _sidecarLoaded = loadSidecarFromUrl(base).catch((e) => {
-      _sidecarLoaded = null;
-      throw e;
-    });
+/** Per-row sidecar (embeddings-rows.*) — only find_similar reads this;
+ *  load it on first use, not on every cold start. */
+export function ensureRowSidecarFromUrl(base: string): Promise<boolean> {
+  if (!_rowSidecarLoaded) {
+    const b = base.replace(/\/+$/, "");
+    _rowSidecarLoaded = fetchSidecarPair(b, "embeddings-rows", setRowSidecar)
+      .then((n) => {
+        if (n === 0) {
+          _rowSidecarLoaded = null;
+          return false;
+        }
+        return true;
+      })
+      .catch((e) => {
+        _rowSidecarLoaded = null;
+        throw e;
+      });
   }
-  return _sidecarLoaded;
+  return _rowSidecarLoaded;
+}
+
+/** Both sidecars. Kept for callers that want them warmed together
+ *  (the stdio/npm server warms them in the background at startup). */
+export function ensureSidecarFromUrl(base: string): Promise<boolean> {
+  return Promise.all([
+    ensureSiteSidecarFromUrl(base),
+    ensureRowSidecarFromUrl(base),
+  ]).then(([a, b]) => a || b);
 }

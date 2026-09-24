@@ -48,11 +48,17 @@ export interface RegisterOptions {
    *  nothing, so local users emit zero telemetry. Must never throw
    *  into the response path (callers wrap it defensively anyway). */
   onToolCall?: (m: { tool: string; ok: boolean; ms: number }) => void;
-  /** Awaited by the two tools that rank on embeddings, so a server can
-   *  start serving before the 11.6MB of sidecars have landed without
-   *  those tools silently degrading to tag arithmetic. Resolves
-   *  immediately once the vectors are in. */
+  /** Awaited by find_similar - the only tool that reads the per-ROW
+   *  sidecar (embeddings-rows.*, 9.1MB) - so a server can start serving
+   *  before it has landed without silently degrading to tag
+   *  arithmetic. Resolves immediately once the vectors are in. */
   awaitVectors?: () => Promise<unknown>;
+  /** Awaited by the tools that read the per-SITE sidecar (embeddings.*,
+   *  3.3MB - search_screens' and recommend's vector blend), so a host
+   *  doesn't pay the fetch + memory on requests that never search
+   *  (initialize, tools/list, get_screen, ...). Resolves immediately
+   *  once the sidecar is in. */
+  awaitSiteVectors?: () => Promise<unknown>;
 }
 
 /** The lite tool surface. Everything an agent needs to go from brief

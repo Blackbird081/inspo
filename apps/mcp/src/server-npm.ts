@@ -23,7 +23,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { ensureCatalogue, ensureSidecarFromUrl } from "@inspo/db";
+import { ensureCatalogue, ensureSiteSidecarFromUrl, ensureRowSidecarFromUrl } from "@inspo/db";
 import { registerTools, SERVER_INSTRUCTIONS } from "./tools";
 import { install } from "./install";
 // Replaced at build time (scripts/build-npm.mjs) with the published version.
@@ -92,18 +92,23 @@ async function main() {
 
   // Screens first, vectors after. A cold start used to pull 14MB and
   // sit on the initialize handshake for ~1.7s; the two embedding
-  // sidecars are 11.6MB of that and only find_similar / recommend read
-  // them. Fetch the catalogue alone (~2.3MB brotli), start serving, and
-  // warm the vectors in the background - those two tools await this
-  // promise, so nothing silently ranks on tag overlap instead.
+  // sidecars are 11.6MB of that and only the vector tools read them.
+  // Fetch the catalogue alone (~2.3MB brotli), start serving, and warm
+  // the vectors in the background - the tools await these promises, so
+  // nothing silently ranks on tag overlap instead. Split per sidecar so
+  // search_screens (site, 3.3MB) doesn't wait on the 9.1MB row one.
   await ensureCatalogue(CATALOGUE_URL, { sidecars: false });
-  const vectors = ensureSidecarFromUrl(CATALOGUE_URL).catch(() => false);
+  const siteVectors = ensureSiteSidecarFromUrl(CATALOGUE_URL).catch(() => false);
+  const rowVectors = ensureRowSidecarFromUrl(CATALOGUE_URL).catch(() => false);
 
   const server = new McpServer(
     { name: "inspo", version: VERSION },
     { instructions: SERVER_INSTRUCTIONS },
   );
-  registerTools(server, { awaitVectors: () => vectors });
+  registerTools(server, {
+    awaitVectors: () => rowVectors,
+    awaitSiteVectors: () => siteVectors,
+  });
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
