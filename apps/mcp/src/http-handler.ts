@@ -36,7 +36,7 @@ export function optionsFromUrl(url: URL): RegisterOptions {
 
 export async function handleMcpRequest(
   request: Request,
-  extra?: Pick<RegisterOptions, "onToolCall">,
+  extra?: Pick<RegisterOptions, "onToolCall" | "awaitVectors" | "awaitSiteVectors">,
 ): Promise<Response> {
   const server = new McpServer(
     { name: "inspo", version: SERVER_VERSION },
@@ -73,6 +73,8 @@ export async function handleMcpRequest(
     images,
     maxTokens: fromUrl.maxTokens,
     onToolCall: extra?.onToolCall,
+    awaitVectors: extra?.awaitVectors,
+    awaitSiteVectors: extra?.awaitSiteVectors,
   });
 
   const transport = new WebStandardStreamableHTTPServerTransport({

@@ -534,6 +534,10 @@ export function registerTools(server: McpServer, opts: RegisterOptions = {}) {
 
       const inline = ctx.inlineImages();
       const detail = resolveDetail(args.detail, args.maxTokens);
+      // The per-site sidecar (3.3MB) powers the vector blend; on a fresh
+      // server it may still be in flight, and ranking lexically because
+      // it had not landed yet would be a silent downgrade.
+      await opts.awaitSiteVectors?.();
       const matched = await searchScreens(filtered, args.query, args.limit);
       const results = rows(
         matched,
@@ -1449,7 +1453,11 @@ export function registerTools(server: McpServer, opts: RegisterOptions = {}) {
       },
     },
     async (args) => {
-      await opts.awaitVectors?.();
+      // recommend ranks via searchScreens, whose vector blend reads the
+      // per-site sidecar - wait for it so a fresh server doesn't
+      // silently rank lexically. The row sidecar is find_similar's
+      // alone; nothing here reads it, so don't pay its 9.1MB.
+      await opts.awaitSiteVectors?.();
       const all = await getAllScreens({
         device: args.device as CaptureDevice | undefined,
       });

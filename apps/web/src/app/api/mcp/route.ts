@@ -8,14 +8,17 @@
  *   https://<your-domain>/api/mcp
  *
  * Data: the catalogue is the static seed bundled into the web build, so
- * it's always in sync with the deploy (no fetch). The embedding sidecar
- * (`embeddings.bin`) isn't bundled, so we fetch it from the CDN once per
- * lambda - best-effort - to power the vector tools (find_similar /
- * recommend). If that fetch fails, search still works lexically.
+ * it's always in sync with the deploy (no fetch). The embedding sidecars
+ * aren't bundled, so they're fetched from the CDN lazily, once per
+ * lambda, and only when a tool that reads them runs: the per-site one
+ * (`embeddings.*`, 3.3MB - powers search ranking) on the first
+ * search_screens / recommend, the per-row one (`embeddings-rows.*`,
+ * 9.1MB - powers find_similar) on the first such call.
+ * If a fetch fails, search still works lexically.
  */
 
 import { handleMcpRequest } from "@inspo/mcp/http";
-import { ensureSidecarFromUrl } from "@inspo/db";
+import { ensureSiteSidecarFromUrl, ensureRowSidecarFromUrl } from "@inspo/db";
 
 // The MCP server uses the Node-only Together/Neon SDKs; pin the Node
 // runtime. Dynamic (never cached) - every call is a fresh JSON-RPC.
@@ -96,8 +99,17 @@ async function handle(request: Request): Promise<Response> {
     request = new Request(request.url, { method: request.method, headers, body });
   }
 
-  await ensureSidecarFromUrl(CATALOGUE_URL).catch(() => {});
+  // Neither sidecar loads on the request path: each is pulled lazily by
+  // the tools that actually read it, so the MCP chatter that makes up
+  // ~99% of traffic (initialize / tools/list / ping / SSE) never pays
+  // the Blob fetch or the memory. The per-site one (3.3MB - search
+  // ranking) loads on the first search_screens / recommend via
+  // awaitSiteVectors; the per-row one (9.1MB - find_similar only)
+  // via awaitVectors. Both memoize per isolate, so a warm lambda fetches
+  // nothing.
   return handleMcpRequest(request, {
+    awaitSiteVectors: () => ensureSiteSidecarFromUrl(CATALOGUE_URL).catch(() => false),
+    awaitVectors: () => ensureRowSidecarFromUrl(CATALOGUE_URL).catch(() => false),
     // One structured log line per tool call, visible in Vercel logs.
     // Nothing is stored: no IPs, no query text, just tool/ok/duration.
     // (The Cloudflare Worker path writes the same shape to Analytics
@@ -125,6 +137,15 @@ export async function POST(request: Request): Promise<Response> {
   return safely(request);
 }
 
-export async function GET(request: Request): Promise<Response> {
-  return safely(request);
+export async function GET(): Promise<Response> {
+  // No standalone SSE stream on this stateless endpoint. 405 is the
+  // spec-sanctioned "not offered" signal: the MCP SDK client treats it as
+  // expected and carries on without server->client notifications (which a
+  // stateless server never sends anyway). Returning 200 here let clients
+  // hold an empty stream until the 30s maxDuration killed the lambda, then
+  // immediately reconnect - a ~150 req/s churn that accounted for ~95% of
+  // requests, nearly all "task timed out" errors, and most of the Blob
+  // sidecar fetches and GB-hrs. This short-circuit also skips the rate
+  // limiter and the sidecar fetch, so it costs nothing per call.
+  return jsonError(405, "sse streams not supported on the stateless endpoint");
 }

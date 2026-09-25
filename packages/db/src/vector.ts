@@ -50,7 +50,14 @@ function sidecarPaths(stem: string): { bin: string; idx: string } | null {
 type SidecarIdx = { slugs: string[]; dims: number; count?: number };
 
 /** Parse an idx + raw bin pair into a slug-keyed vector map. Returns
- *  null on dims/byte-length mismatch so callers degrade gracefully. */
+ *  null on dims/byte-length mismatch so callers degrade gracefully.
+ *
+ *  Entries are subarray VIEWS over the one retained buffer, not slices:
+ *  a slice copies each 4KB vector into its own ArrayBuffer, and 3,152
+ *  tiny allocations measured ~37MB external for 12.4MB of vectors
+ *  (per-buffer overhead) — ~25MB of avoidable memory per serverless
+ *  instance. The buffer stays alive exactly as long as the map either
+ *  way, and the vectors are only ever read. */
 function parseSidecar(
   idx: SidecarIdx,
   bin: ArrayBuffer,
@@ -62,7 +69,7 @@ function parseSidecar(
   for (let i = 0; i < idx.slugs.length; i++) {
     map.set(
       idx.slugs[i]!,
-      view.slice(i * EMBEDDING_DIMS, (i + 1) * EMBEDDING_DIMS),
+      view.subarray(i * EMBEDDING_DIMS, (i + 1) * EMBEDDING_DIMS),
     );
   }
   return map;

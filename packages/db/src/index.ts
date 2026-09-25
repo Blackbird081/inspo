@@ -49,6 +49,8 @@ export {
   loadCatalogueFromUrl,
   ensureCatalogue,
   ensureSidecarFromUrl,
+  ensureSiteSidecarFromUrl,
+  ensureRowSidecarFromUrl,
   type CatalogueLoadResult,
 } from "./load-remote";
 export { screens, collections } from "./fixtures";
