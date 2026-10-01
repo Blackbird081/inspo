@@ -39,15 +39,41 @@ const expo = {
    weight underneath. Re-measure if the spacing changes. */
 const OPTICAL_NUDGE = -25;
 
-export const OutroScene: React.FC<{ caption?: string; url?: string }> = ({
-  caption = "MCP · Coming soon",
-  url,
-}) => {
+/* Where Fraunces 400 puts the dot inside a 220px "." box (lineHeight
+   1). Measured off a render: dot 33px across, centred here. */
+export const PERIOD_DOT = { x: 26.5, y: 174.5 };
+
+export const OutroScene: React.FC<{
+  caption?: string;
+  url?: string;
+  /* When the wordmark starts in; the deck follows it. */
+  markAt?: number;
+  /* Set when the period is carried in from the shot before (the launch
+     film hops it over from the tagline): it is invisible until that
+     frame, then lands with a small settle instead of popping up. */
+  periodLandsAt?: number;
+}> = ({ caption = "MCP · Coming soon", url, markAt = 8, periodLandsAt }) => {
   const frame = useAuthoredFrame();
 
-  const markIn = interpolate(frame, [8, 22], [0, 1], expo);
-  const captionIn = interpolate(frame, [32, 44], [0, 1], expo);
-  const urlIn = interpolate(frame, [42, 56], [0, 1], expo);
+  const markIn = interpolate(frame, [markAt, markAt + 14], [0, 1], expo);
+  const captionIn = interpolate(
+    frame,
+    [markAt + 24, markAt + 36],
+    [0, 1],
+    expo,
+  );
+  const urlIn = interpolate(frame, [markAt + 34, markAt + 48], [0, 1], expo);
+
+  const carried = periodLandsAt !== undefined;
+  const periodScale = carried
+    ? interpolate(
+        frame,
+        [periodLandsAt, periodLandsAt + 3, periodLandsAt + 9],
+        [1.16, 0.95, 1],
+        expo,
+      )
+    : interpolate(frame, [22, 28, 34], [0, 1.25, 1], expo);
+  const periodShown = carried ? (frame >= periodLandsAt ? 1 : 0) : 1;
 
   return (
     <AbsoluteFill
@@ -86,7 +112,7 @@ export const OutroScene: React.FC<{ caption?: string; url?: string }> = ({
             color: colors.ink,
             opacity: markIn,
             scale: String(
-              interpolate(frame, [8, 32], [0.9, 1], {
+              interpolate(frame, [markAt, markAt + 24], [0.9, 1], {
                 ...expo,
                 output: "perceptual-scale",
               }),
@@ -98,9 +124,12 @@ export const OutroScene: React.FC<{ caption?: string; url?: string }> = ({
             style={{
               color: colors.accent,
               display: "inline-block",
-              scale: String(
-                interpolate(frame, [22, 28, 34], [0, 1.25, 1], expo),
-              ),
+              opacity: periodShown,
+              scale: String(periodScale),
+              /* Scale about the dot itself, not the glyph's box - the
+                 box is mostly empty space above the dot, so scaling
+                 about its centre would also shove the dot downward. */
+              transformOrigin: `${PERIOD_DOT.x}px ${PERIOD_DOT.y}px`,
             }}
           >
             .

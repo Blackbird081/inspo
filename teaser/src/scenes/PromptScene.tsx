@@ -8,7 +8,7 @@ import {
 import { useAuthoredFrame } from "../timing";
 import { colors, EXPO, fonts } from "../theme";
 
-const PROMPT = "build a landing page for Overpass, crop maps for farmers";
+export const PROMPT = "build a landing page for Tenner, pocket money for teens";
 
 /* The film opens mid-keystroke on purpose. There is no fly-in and no
    wait: frame 0 is the pill with a caret in it, already typing.
@@ -19,19 +19,33 @@ const PROMPT = "build a landing page for Overpass, crop maps for farmers";
    complete for 28 frames before the camera moves. Roughly a second of
    the whole line, on top of the read-along while it types.
 
-   Frame math: typing 0-26, hold 26-48, send pulses 44-50, press dip
-   48-54, handoff zoom 54-62. Scene is 62 frames long. */
+   It does not leave by zooming through itself any more. The press
+   releases at 54, the pill is back at rest, and from 55 the archive
+   scene owns it: the pill shrinks and rises into the search chip and
+   the send button becomes the chip's live dot. So nothing here may
+   move after 54 - the handoff frame has to be identical on both sides.
+
+   Frame math: typing 0-25, hold 25-48, send pulses 44-50, press dip
+   48-54, at rest from 54. Scene is 57 frames long. */
 
 /* Fast enough to read as a fast typist, not as a wipe. */
 const CHARS_PER_FRAME = 2.2;
-export const PromptScene: React.FC = () => {
+/* The launch film hands the pill to the archive scene to morph, so
+   it holds at rest. The ten-second teaser has no morph and still
+   leaves by pushing through the pill into its own search scene. */
+export const PromptScene: React.FC<{ exit?: "hold" | "zoom" }> = ({
+  exit = "zoom",
+}) => {
   const frame = useAuthoredFrame();
+  const zoomOut = exit === "zoom";
 
   const typed = PROMPT.slice(0, Math.floor(frame * CHARS_PER_FRAME));
   const doneTyping = typed.length >= PROMPT.length;
 
-  /* Caret blinks only once typing is done; solid while typing. */
-  const caretOn = doneTyping ? Math.floor(frame / 7) % 2 === 0 : true;
+  /* Caret blinks only once typing is done; solid while typing; gone
+     the moment send is pressed, as it is in any real input. */
+  const caretOn =
+    frame >= 48 ? false : doneTyping ? Math.floor(frame / 7) % 2 === 0 : true;
 
   /* The send press: a quick dip and release on the whole pill. */
   const press = interpolate(frame, [48, 51, 54], [1, 0.965, 1], {
@@ -46,19 +60,22 @@ export const PromptScene: React.FC = () => {
         backgroundColor: colors.paper,
         justifyContent: "center",
         alignItems: "center",
-        /* Handoff: the camera pushes through the pill into the archive. */
-        scale: String(
-          interpolate(frame, [54, 62], [1, 2.4], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-            easing: Easing.bezier(0.5, 0, 0.9, 0.4),
-          }),
-        ),
-        opacity: interpolate(frame, [56, 62], [1, 0], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-          easing: Easing.linear,
-        }),
+        scale: zoomOut
+          ? String(
+              interpolate(frame, [54, 62], [1, 2.4], {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+                easing: Easing.bezier(0.5, 0, 0.9, 0.4),
+              }),
+            )
+          : undefined,
+        opacity: zoomOut
+          ? interpolate(frame, [56, 62], [1, 0], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+              easing: Easing.linear,
+            })
+          : undefined,
       }}
     >
       <Interactive.Div

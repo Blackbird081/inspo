@@ -10,11 +10,11 @@ import { colors, EXPO, fonts } from "../theme";
 
 /* The one line the whole film has been arguing.
 
-   Local timeline (scene starts at global frame 469):
-   0-10    paper washes over the last page, still running below
+   Local timeline (the launch film starts this at global frame 395):
    6-24    "Your agent doesn’t have taste." rises in
    16-34   "Lend it some." follows, its period in accent
-   50-60   both lift away for the mark */
+   48      the period is taken over by the traveller (it hops to the
+           wordmark), and from 50 the words lift away without it */
 
 const expo = {
   extrapolateLeft: "clamp" as const,
@@ -27,7 +27,11 @@ const line = (frame: number, from: number) => ({
   translate: interpolate(frame, [from, from + 18], ["0px 28px", "0px 0px"], expo),
 });
 
-export const TaglineScene: React.FC = () => {
+/* `periodLeavesAt`: the frame the accent period stops being drawn here
+   because a traveller has taken it - it hops from "some." to "Inspo." */
+export const TaglineScene: React.FC<{ periodLeavesAt?: number }> = ({
+  periodLeavesAt = Infinity,
+}) => {
   const frame = useAuthoredFrame();
 
   const out = interpolate(frame, [50, 60], [1, 0], expo);
@@ -35,16 +39,9 @@ export const TaglineScene: React.FC = () => {
   const two = line(frame, 16);
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: colors.paper,
-        opacity: interpolate(frame, [0, 10], [0, 1], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-          easing: Easing.linear,
-        }),
-      }}
-    >
+    /* No wash: the gallery clears itself (its cards recede into the
+       paper), so the line rises onto a clean page, not over a fog. */
+    <AbsoluteFill>
       <AbsoluteFill
         style={{
           justifyContent: "center",
@@ -71,7 +68,15 @@ export const TaglineScene: React.FC = () => {
         >
           <div style={one}>Your agent doesn’t have taste.</div>
           <div style={two}>
-            Lend it some<span style={{ color: colors.accent }}>.</span>
+            Lend it some
+            <span
+              style={{
+                color: colors.accent,
+                opacity: frame < periodLeavesAt ? 1 : 0,
+              }}
+            >
+              .
+            </span>
           </div>
         </Interactive.Div>
       </AbsoluteFill>

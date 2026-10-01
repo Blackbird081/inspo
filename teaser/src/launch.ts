@@ -9,6 +9,16 @@ import { staticFile } from "remotion";
    and a touch smaller so the brief pill has room above it. */
 export const FRAME = { x: 231, y: 160, w: 1458, h: 820, radius: 24 };
 
+/* ── The opening morph ───────────────────────────────────────
+   The prompt pill does not cut away: it becomes the search chip. These
+   are the two rects it travels between. PILL must match PromptScene's
+   pill exactly (it is centred on the frame at 1280 x 104), because the
+   archive takes over from it on a frame where they are identical. */
+export const PILL = { x: (1920 - 1280) / 2, y: (1080 - 104) / 2, w: 1280, h: 104 };
+export const CHIP = { x: (1920 - 660) / 2, y: 58, w: 660, h: 78 };
+/* PromptScene's send button: 72px, 16px in from the pill's right. */
+export const SEND = { size: 72, right: 16 };
+
 /* The brief pill that floats above a page in the montage. */
 export const BRIEF = { top: 64, h: 64 };
 
@@ -50,11 +60,14 @@ export const REF_META: Record<
    first is the page the film just built; the other five are dealt out
    from behind it.
 
-   Cast for range and for colour, because at grid size colour is most
-   of what reads: a satellite service, a frame builder, a tattoo
-   studio, a ramen shop, a terminal emulator and a pocket-money app.
-   Three dark and three light, checkerboarded in the grid below so no
-   two of a kind touch. */
+   The built page is Tenner, a pocket-money app: the most relatable
+   brief in the gallery, the loudest hero, and a section under it that
+   is a burst of colour cards, so the scroll has somewhere to arrive.
+
+   The other five are cast for range and for colour, because at grid
+   size colour is most of what reads: a tattoo studio, a frame builder,
+   a climbing gym, a ramen shop and a terminal emulator. Three light
+   and three dark, checkerboarded so no two of a kind touch. */
 export type GalleryPage = {
   slug: string;
   brief: string;
@@ -63,9 +76,14 @@ export type GalleryPage = {
 
 export const GALLERY: GalleryPage[] = [
   {
-    slug: "fieldsat-full",
-    brief: "build a landing page for Overpass, crop maps for farmers",
-    img: { w: 2560, h: 5600 },
+    slug: "teen-savings-full",
+    brief: "build a landing page for Tenner, pocket money for teens",
+    img: { w: 2560, h: 3600 },
+  },
+  {
+    slug: "tattoo-studio-full",
+    brief: "a booking page for our tattoo studio",
+    img: { w: 2560, h: 1950 },
   },
   {
     slug: "calder-frameworks-full",
@@ -73,8 +91,8 @@ export const GALLERY: GalleryPage[] = [
     img: { w: 2560, h: 1950 },
   },
   {
-    slug: "tattoo-studio-full",
-    brief: "a booking page for our tattoo studio",
+    slug: "chalkline-gym-full",
+    brief: "a site for our climbing gym",
     img: { w: 2560, h: 1950 },
   },
   {
@@ -85,11 +103,6 @@ export const GALLERY: GalleryPage[] = [
   {
     slug: "ferrite-terminal-full",
     brief: "a page for our open source terminal",
-    img: { w: 2560, h: 1950 },
-  },
-  {
-    slug: "teen-savings-full",
-    brief: "a site for our pocket money app",
     img: { w: 2560, h: 1950 },
   },
 ];
@@ -124,14 +137,19 @@ export const gridRect = (i: number) => ({
 export const pageScrollDist = (img: { w: number; h: number }) =>
   Math.max(0, img.h * (FRAME.w / img.w) - FRAME.h);
 
-/* How far the built page scrolls before the rest are dealt out.
+/* ── Where the built page's scroll lands ─────────────────────
+   One human flick down Tenner, landing on the section under the hero:
+   "Saving is easier when the money has somewhere to go", the coloured
+   cards below it, and the titles of the second row of cards just
+   peeking at the bottom edge - how a page actually sits after a
+   flick, rather than a section snapped flush to the top.
 
-   Deliberately one frame-height and no more. An earlier cut ran this
-   to 2270 - most of the page - and it was the slowest, least earned
-   stretch of the film: a long trip down a page nobody asked to read.
-   One screen is enough to prove the thing is a real page with depth
-   under the fold, and then it is gone. The gallery scrolls it back up
-   as it shrinks into its slot. */
-export const HERO_SCROLL_MAX = 820;
+   In CSS px of the 1280-wide page; the capture is 2x. The frame shows
+   1280 x 720 CSS px of it. */
+export const HERO_LAND_CSS = 1010;
+export const HERO_DOC_CSS = 8205;
+export const HERO_VIEW_CSS = 720;
+
+/** The landing as a scroll offset in rendered px inside FRAME. */
 export const heroScroll = (img: { w: number; h: number }) =>
-  Math.min(pageScrollDist(img), HERO_SCROLL_MAX);
+  HERO_LAND_CSS * 2 * (FRAME.w / img.w);

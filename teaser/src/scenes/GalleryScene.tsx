@@ -22,12 +22,18 @@ import { colors, EXPO } from "../theme";
    Local timeline:
    0-8     the built page, still where the archive left it
    8-36    the six deal out, two frames apart, eighteen frames each
-   36-92   the grid holds and the camera leans in very slightly */
+   36-64   the grid holds and the camera leans in very slightly
+   64-88   the cards recede in reading order - they sink back into the
+           paper rather than being washed over, so the line that
+           follows arrives on a clean page instead of a muddy one */
 
 const DEAL_AT = 8;
 const STAGGER = 2;
 const TRAVEL = 18;
 const LAST_LANDS = DEAL_AT + (GALLERY.length - 1) * STAGGER + TRAVEL;
+const EXIT_AT = 64;
+const EXIT_STAGGER = 2;
+const EXIT_LEN = 14;
 
 const expo = {
   extrapolateLeft: "clamp" as const,
@@ -104,6 +110,19 @@ export const GalleryScene: React.FC = () => {
             extrapolateRight: "clamp",
           });
 
+          /* The recede: accelerating away, like something set down
+             being taken back, not a fade at constant speed. */
+          const out = interpolate(
+            frame,
+            [EXIT_AT + i * EXIT_STAGGER, EXIT_AT + i * EXIT_STAGGER + EXIT_LEN],
+            [0, 1],
+            {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+              easing: Easing.bezier(0.55, 0, 0.8, 0.4),
+            },
+          );
+
           /* Only the built page is scrolled - it was left a screen
              down, and it winds back to its masthead as it shrinks, so
              it matches the five it is landing beside. */
@@ -120,9 +139,10 @@ export const GalleryScene: React.FC = () => {
                 width: w,
                 height: h,
                 zIndex: GALLERY.length - i,
-                opacity: hidden,
+                opacity: hidden * (1 - out),
                 rotate: `${swing}deg`,
-                scale: String(pop),
+                scale: String(pop * lerp(1, 0.86, out)),
+                translate: `0px ${36 * out}px`,
               }}
             >
               <div

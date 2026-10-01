@@ -6,9 +6,9 @@ Watch either cut below, then run the project to scrub through the scenes, change
 
 ## Watch
 
-### Launch film · 17.4 seconds
+### Launch film · 18.1 seconds
 
-**This is the video used for the launch.** A prompt for a crop-mapping website leads into the archive: three references are selected, their fonts and palettes appear, and the cards become a finished page. That page then deals five more out from behind itself into a grid: a bike workshop, tattoo studio, ramen shop, terminal app, and pocket-money app. It closes with “Your agent doesn't have taste. Lend it some.” and `inspomcp.dev`.
+**This is the video used for the launch.** A prompt for a pocket-money app is typed and sent, and the prompt box itself becomes the search: it rises into a status chip while the archive surges up behind it. Three references are selected and their fonts and palettes read off, then a render pass writes the finished page over them and one human flick scrolls it to its next section. That page deals five more out from behind itself into a grid: a tattoo studio, frame builder, climbing gym, ramen shop, and terminal app. It closes with “Your agent doesn't have taste. Lend it some.”, whose period hops up into the Inspo wordmark, and `inspomcp.dev`.
 
 https://github.com/user-attachments/assets/7e36a715-0f68-46c3-8449-ee18e703cd5e
 
@@ -20,7 +20,7 @@ https://github.com/user-attachments/assets/8c194a05-e815-46b0-977a-2c86159ce5dc
 
 | Composition | Duration | Resolution | Frame rate | Entry point |
 | --- | --- | --- | --- | --- |
-| `InspoLaunch` | 17.4s (1,040 frames) | 1920 × 1080 | 60 fps | [InspoLaunch.tsx](src/InspoLaunch.tsx) |
+| `InspoLaunch` | 18.1s (1,084 frames) | 1920 × 1080 | 60 fps | [InspoLaunch.tsx](src/InspoLaunch.tsx) |
 | `InspoTeaser` | 10s (600 frames) | 1920 × 1080 | 60 fps | [InspoTeaser.tsx](src/InspoTeaser.tsx) |
 
 ## Play and edit locally
@@ -40,7 +40,7 @@ The preview and render use the images in `public/`. You don't need to run the In
 
 ## How we built it
 
-We built and refined the video with Claude using [Remotion](https://www.remotion.dev/), which renders React components into video. The commit history documents the iterations: recutting the story around three references becoming a page, making the opening prompt readable, tightening the end card, moving the render to 60 fps, and replacing a slow page-by-page montage with a grid the built page deals itself into.
+We built and refined the video with Claude using [Remotion](https://www.remotion.dev/), which renders React components into video. The commit history documents the iterations: recutting the story around three references becoming a page, making the opening prompt readable, tightening the end card, moving the render to 60 fps, replacing a slow page-by-page montage with a grid the built page deals itself into, and a motion pass that turned every cut into a transformation: the prompt box becomes the search chip, a render pass writes the page, a trackpad-physics scroll, and a period that hops from the tagline into the logo.
 
 ### 1. Break the story into React scenes
 
