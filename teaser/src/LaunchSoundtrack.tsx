@@ -13,10 +13,9 @@ import { useAuthoredFrames } from "./timing";
 
 /* Global authored (30fps) frames for the launch cut. Each reference kept fires a
    shutter; each one read gets a soft switch as its palette lands;
-   every move of the montage track gets a quiet whoosh. */
+   the gallery gets one whoosh as the six deal out. */
 const SHUTTERS = [113, 120, 127];
 const READS = [165, 170, 175];
-const TRACK = [345, 377, 409, 441];
 
 export const LaunchSoundtrack: React.FC = () => {
   const t = useAuthoredFrames();
@@ -51,15 +50,13 @@ export const LaunchSoundtrack: React.FC = () => {
       <Sequence from={t(277)} name="sfx: page">
         <Audio src={whoosh} volume={0.3} />
       </Sequence>
-      {TRACK.map((at) => (
-        <Sequence key={at} from={t(at)} name="sfx: next page">
-          <Audio src={whoosh} volume={0.22} />
-        </Sequence>
-      ))}
-      <Sequence from={t(549)} name="sfx: mark">
+      <Sequence from={t(305)} name="sfx: deal">
+        <Audio src={whoosh} volume={0.4} />
+      </Sequence>
+      <Sequence from={t(447)} name="sfx: mark">
         <Audio src={ding} volume={0.25} />
       </Sequence>
-      <Sequence from={t(572)} name="sfx: address">
+      <Sequence from={t(469)} name="sfx: address">
         <Audio src={uiSwitch} volume={0.2} />
       </Sequence>
     </>

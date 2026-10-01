@@ -45,23 +45,23 @@ export const REF_META: Record<
   },
 };
 
-/* ── The montage ─────────────────────────────────────────────
-   Pages Inspo built, each with the brief that produced it. All ten
-   Fable 5.1 generations, from apps/web/public/examples, shot full-page
-   at 2x and cropped to what the frame actually reaches.
+/* ── The pages Inspo made ────────────────────────────────────
+   Six generations from apps/web/public/examples, shot at 2x. The
+   first is the page the film just built; the other five are dealt out
+   from behind it.
 
-   The first is the page the film just built; the four after it are
-   cast for range, not just for looks - a satellite service for
-   farmers, a frame builder, a tattoo studio, a ramen shop and a
-   terminal emulator say "any register, any page type" in a way five
-   landing pages cannot. They alternate light and dark. */
-export type MontagePage = {
+   Cast for range and for colour, because at grid size colour is most
+   of what reads: a satellite service, a frame builder, a tattoo
+   studio, a ramen shop, a terminal emulator and a pocket-money app.
+   Three dark and three light, checkerboarded in the grid below so no
+   two of a kind touch. */
+export type GalleryPage = {
   slug: string;
   brief: string;
   img: { w: number; h: number };
 };
 
-export const MONTAGE: MontagePage[] = [
+export const GALLERY: GalleryPage[] = [
   {
     slug: "fieldsat-full",
     brief: "build a landing page for Overpass, crop maps for farmers",
@@ -87,32 +87,51 @@ export const MONTAGE: MontagePage[] = [
     brief: "a page for our open source terminal",
     img: { w: 2560, h: 1950 },
   },
+  {
+    slug: "teen-savings-full",
+    brief: "a site for our pocket money app",
+    img: { w: 2560, h: 1950 },
+  },
 ];
 
 export const pageSrc = (slug: string) => staticFile(`real/${slug}.jpg`);
+
+/* ── The grid they land in ───────────────────────────────────
+   Three across, two down, cards cut to the same aspect as FRAME so
+   the built page keeps its shape on the way into its slot. */
+export const GRID_COLS = 3;
+export const GRID_GAP = 36;
+const GRID_MARGIN_X = 90;
+
+export const CARD_W =
+  (1920 - 2 * GRID_MARGIN_X - (GRID_COLS - 1) * GRID_GAP) / GRID_COLS;
+export const CARD_H = CARD_W * (FRAME.h / FRAME.w);
+export const CARD_RADIUS = 14;
+
+const gridRows = Math.ceil(GALLERY.length / GRID_COLS);
+const gridH = gridRows * CARD_H + (gridRows - 1) * GRID_GAP;
+const gridY = (1080 - gridH) / 2;
+
+export const gridRect = (i: number) => ({
+  x: GRID_MARGIN_X + (i % GRID_COLS) * (CARD_W + GRID_GAP),
+  y: gridY + Math.floor(i / GRID_COLS) * (CARD_H + GRID_GAP),
+  w: CARD_W,
+  h: CARD_H,
+});
 
 /* How far a full-page shot has to travel inside the frame to reach
    its footer. */
 export const pageScrollDist = (img: { w: number; h: number }) =>
   Math.max(0, img.h * (FRAME.w / img.w) - FRAME.h);
 
-/* Where the built page's scroll stops. A cap rather than the true
-   footer: these pages run five to eight screens deep, and racing one
-   end to end in forty frames is a smear, not a read.
+/* How far the built page scrolls before the rest are dealt out.
 
-   The value is chosen for the page that is cast, not picked round:
-   2270 sweeps the satellite page past its yield chart and parks it on
-   the crop-index cards, which is a composition worth holding on while
-   the montage brings its brief back. Recast the result page and
-   re-choose it.
-
-   Both the archive scene and the montage read the scroll from here,
-   so the page sits at exactly the same offset either side of the cut. */
-export const HERO_SCROLL_MAX = 2270;
+   Deliberately one frame-height and no more. An earlier cut ran this
+   to 2270 - most of the page - and it was the slowest, least earned
+   stretch of the film: a long trip down a page nobody asked to read.
+   One screen is enough to prove the thing is a real page with depth
+   under the fold, and then it is gone. The gallery scrolls it back up
+   as it shrinks into its slot. */
+export const HERO_SCROLL_MAX = 820;
 export const heroScroll = (img: { w: number; h: number }) =>
   Math.min(pageScrollDist(img), HERO_SCROLL_MAX);
-
-/* Spacing between pages on the montage track: wide enough that a
-   settled page's neighbours sit fully outside the frame. */
-export const TRACK_GAP = 260;
-export const trackPitch = FRAME.w + TRACK_GAP;

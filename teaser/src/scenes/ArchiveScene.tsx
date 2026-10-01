@@ -25,7 +25,7 @@ import {
 import {
   FRAME,
   heroScroll,
-  MONTAGE,
+  GALLERY,
   pageSrc,
   REF_META,
   ROW,
@@ -49,8 +49,11 @@ import { colors, EXPO, fonts } from "../theme";
    152-184  the cards gather into a fanned stack
    184-194  the stack squares up
    196-216  it grows into the generated page, framed on the paper
-   218-258  a quick scroll through that page, hero to footer
-   258-     it holds at the footer; the montage picks it up from here */
+   218-232  one screen of scroll, just enough to show the page has
+            depth under the fold
+   232-     it holds there, settled several frames before the gallery
+            takes over, so the handoff has nothing left to move
+            (which is the exact frame the gallery takes over on) */
 
 const SCROLL_END = 52;
 const ZOOM = [48, 70] as const;
@@ -61,7 +64,7 @@ const READ_OUT = [148, 156] as const;
 const GATHER = 152;
 const ALIGN = [184, 194] as const;
 const BUILD = [196, 216] as const;
-const PAGE_SCROLL = [218, 258] as const;
+const PAGE_SCROLL = [218, 232] as const;
 
 /* Fanned offsets for the card stack: two behind, the last pick in front. */
 const STACK = [
@@ -76,7 +79,7 @@ const expo = {
   easing: Easing.bezier(...EXPO),
 };
 
-const RESULT = MONTAGE[0];
+const RESULT = GALLERY[0];
 const scrollDist = heroScroll(RESULT.img);
 
 export const ArchiveScene: React.FC = () => {
