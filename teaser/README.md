@@ -6,9 +6,9 @@ Watch either cut below, then run the project to scrub through the scenes, change
 
 ## Watch
 
-### Launch film · 20.7 seconds
+### Launch film · 17.4 seconds
 
-**This is the video used for the launch.** A prompt for a crop-mapping website leads into the archive: three references are selected, their fonts and palettes appear, and the cards become a finished page. A montage follows with websites for a bike workshop, tattoo studio, ramen shop, and terminal app. It closes with “Your agent doesn't have taste. Lend it some.” and `inspomcp.dev`.
+**This is the video used for the launch.** A prompt for a crop-mapping website leads into the archive: three references are selected, their fonts and palettes appear, and the cards become a finished page. That page then deals five more out from behind itself into a grid: a bike workshop, tattoo studio, ramen shop, terminal app, and pocket-money app. It closes with “Your agent doesn't have taste. Lend it some.” and `inspomcp.dev`.
 
 https://github.com/user-attachments/assets/7e36a715-0f68-46c3-8449-ee18e703cd5e
 
@@ -20,7 +20,7 @@ https://github.com/user-attachments/assets/8c194a05-e815-46b0-977a-2c86159ce5dc
 
 | Composition | Duration | Resolution | Frame rate | Entry point |
 | --- | --- | --- | --- | --- |
-| `InspoLaunch` | 20.7s (1,244 frames) | 1920 × 1080 | 60 fps | [InspoLaunch.tsx](src/InspoLaunch.tsx) |
+| `InspoLaunch` | 17.4s (1,040 frames) | 1920 × 1080 | 60 fps | [InspoLaunch.tsx](src/InspoLaunch.tsx) |
 | `InspoTeaser` | 10s (600 frames) | 1920 × 1080 | 60 fps | [InspoTeaser.tsx](src/InspoTeaser.tsx) |
 
 ## Play and edit locally
@@ -40,11 +40,11 @@ The preview and render use the images in `public/`. You don't need to run the In
 
 ## How we built it
 
-We built and refined the video with Claude using [Remotion](https://www.remotion.dev/), which renders React components into video. The commit history documents the iterations: recutting the story around three references becoming a page, making the opening prompt readable, tightening the end card, and moving the render to 60 fps.
+We built and refined the video with Claude using [Remotion](https://www.remotion.dev/), which renders React components into video. The commit history documents the iterations: recutting the story around three references becoming a page, making the opening prompt readable, tightening the end card, moving the render to 60 fps, and replacing a slow page-by-page montage with a grid the built page deals itself into.
 
 ### 1. Break the story into React scenes
 
-The launch film has five scenes: **Prompt → Archive → Montage → Tagline → Outro**. Each is a React component, placed on the timeline with Remotion's `Sequence`. The teaser shares the prompt and outro, with its own shorter search scene between them.
+The launch film has five scenes: **Prompt → Archive → Gallery → Tagline → Outro**. Each is a React component, placed on the timeline with Remotion's `Sequence`. The teaser shares the prompt and outro, with its own shorter search scene between them.
 
 ### 2. Use real screenshots as the visual material
 
@@ -69,7 +69,7 @@ Clicks, shutters, whooshes, page turns, and the closing ding come from `@remotio
 | Opening prompt | [src/scenes/PromptScene.tsx](src/scenes/PromptScene.tsx) |
 | Colors, fonts, shared easing | [src/theme.ts](src/theme.ts) |
 | Archive layout and selected references | [src/shots.ts](src/shots.ts), [src/wall-order.ts](src/wall-order.ts) |
-| Montage pages, briefs, and reference metadata | [src/launch.ts](src/launch.ts) |
+| Gallery pages, grid layout, and reference metadata | [src/launch.ts](src/launch.ts) |
 | Screenshot assets | [public/wall](public/wall), [public/real](public/real) |
 | Closing wordmark, caption, and URL | [src/scenes/OutroScene.tsx](src/scenes/OutroScene.tsx); caption and URL passed from each composition |
 | Scene order and duration | [src/InspoLaunch.tsx](src/InspoLaunch.tsx), [src/InspoTeaser.tsx](src/InspoTeaser.tsx) |
